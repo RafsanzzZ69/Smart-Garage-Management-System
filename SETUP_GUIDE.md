@@ -78,9 +78,9 @@ cd server
 npm install
 ```
 
-Create `.env` file in server directory:
+Create `.env` file in server directory (use your own credentials):
 ```env
-MONGO_URI=mongodb+srv://MahirRafsan:rafsanrian@cluster0.dbu1lwx.mongodb.net/sgms?retryWrites=true&w=majority
+MONGO_URI=your_mongodb_connection_string_here
 JWT_SECRET=your_jwt_secret_key_here
 PORT=5000
 NODE_ENV=development

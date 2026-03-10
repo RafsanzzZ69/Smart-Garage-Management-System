@@ -58,9 +58,9 @@ Your Smart Garage Management System is now **live and running**!
 ### Method 2: MongoDB Compass
 1. Open MongoDB Compass on your PC
 2. Click **"New Connection"**
-3. Paste this connection string:
+3. Paste your connection string (replace with your own credentials):
    ```
-   mongodb+srv://MahirRafsan:rafsanrian@cluster0.dbu1lwx.mongodb.net/sgms?retryWrites=true&w=majority
+   mongodb+srv://<username>:<password>@cluster0.dbu1lwx.mongodb.net/sgms?retryWrites=true&w=majority
    ```
 4. Click **"Connect"**
 5. Browse all collections
