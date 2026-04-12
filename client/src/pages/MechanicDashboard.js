@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import './MechanicDashboard.css';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://localhost:8000';
 
 const MechanicDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -118,7 +118,7 @@ const MechanicDashboard = () => {
       <div className="mechanic-stats">
         <div className="stat-card">
           <div className="stat-label">Total Earnings</div>
-          <div className="stat-value">${earnings.totalEarnings}</div>
+          <div className="stat-value">৳{earnings.totalEarnings}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Completed Jobs</div>
@@ -232,19 +232,19 @@ const MechanicDashboard = () => {
             <div className="earnings-grid">
               <div className="earnings-card">
                 <div className="earnings-label">Total Earnings</div>
-                <div className="earnings-value">${earnings.totalEarnings}</div>
+                <div className="earnings-value">৳{earnings.totalEarnings}</div>
               </div>
               <div className="earnings-card" style={{ background: 'linear-gradient(135deg, #51cf66 0%, #40c057 100%)' }}>
                 <div className="earnings-label">Completed Jobs</div>
-                <div className="earnings-value">{earnings.completedJobs}</div>
+                <div className="earnings-value">৳{earnings.completedJobs}</div>
               </div>
               <div className="earnings-card" style={{ background: 'linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%)' }}>
                 <div className="earnings-label">Pending Jobs</div>
-                <div className="earnings-value">{earnings.pendingJobs}</div>
+                <div className="earnings-value">৳{earnings.pendingJobs}</div>
               </div>
               <div className="earnings-card" style={{ background: 'linear-gradient(135deg, #ffd43b 0%, #ffca3d 100%)', color: '#333' }}>
                 <div className="earnings-label">Avg per Job</div>
-                <div className="earnings-value">${earnings.completedJobs > 0 ? Math.round(earnings.totalEarnings / earnings.completedJobs) : 0}</div>
+                <div className="earnings-value">৳{earnings.completedJobs > 0 ? Math.round(earnings.totalEarnings / earnings.completedJobs) : 0}</div>
               </div>
             </div>
 

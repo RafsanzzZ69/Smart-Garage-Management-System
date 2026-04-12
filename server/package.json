@@ -26,5 +26,8 @@
     "pdfkit": "^0.17.2",
     "socket.io": "^4.8.3",
     "stripe": "^20.4.1"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.0.1"
   }
 }
