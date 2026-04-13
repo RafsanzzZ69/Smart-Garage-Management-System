@@ -1,20 +1,22 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
-let mongoServer;
+
 const connectDB = async () => {
   try {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+      throw new Error('MONGO_URI is not set in .env');
+    }
     await mongoose.connect(mongoUri);
-    console.log('✅ Connected to MongoDB Memory Server');
+    console.log('✅ Connected to MongoDB');
   } catch (error) {
     console.error('MongoDB Connection Error:', error);
     process.exit(1);
   }
 };
+
 const seedUsers = async () => {
   try {
     await User.deleteMany({});
@@ -50,4 +52,5 @@ const seedUsers = async () => {
     process.exit(1);
   }
 };
+
 connectDB().then(seedUsers);

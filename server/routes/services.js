@@ -7,7 +7,7 @@ const router = express.Router();
 // Get all services
 router.get('/', auth, async (req, res) => {
   try {
-    const services = await Service.find().populate('vehicle mechanic partsUsed invoice');
+    const services = await Service.find().populate('customer vehicle mechanic partsUsed invoice');
     res.send(services);
   } catch (err) {
     res.status(500).send({ error: err.message });

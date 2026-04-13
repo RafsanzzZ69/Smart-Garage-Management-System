@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import './AdminDashboard.css';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:5000';
 
 const AdminDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -20,7 +20,7 @@ const AdminDashboard = () => {
   const [vehicles, setVehicles] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [newInventory, setNewInventory] = useState({ name: '', quantity: '', supplier: '', purchasePrice: '' });
-  const [serviceForm, setServiceForm] = useState({ customer: '', vehicle: '', serviceType: '', status: 'Pending', mechanic: '', estimatedCost: '' });
+  const [serviceForm, setServiceForm] = useState({ customer: '', vehicle: '', serviceType: '', status: 'Booked', mechanic: '', estimatedCost: '' });
 
   // ── New Feature States ───────────────────────────────────────
   // Attendance
@@ -160,11 +160,20 @@ const AdminDashboard = () => {
   const handleCreateService = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE_URL}/api/services`, serviceForm, headers);
-      setServiceForm({ customer: '', vehicle: '', serviceType: '', status: 'Pending', mechanic: '', estimatedCost: '' });
+      const payload = {
+        customer: serviceForm.customer,
+        vehicle: serviceForm.vehicle,
+        type: serviceForm.serviceType,
+        status: serviceForm.status,
+        mechanic: serviceForm.mechanic,
+        cost: Number(serviceForm.estimatedCost) || 0,
+        date: new Date(),
+      };
+      await axios.post(`${API_BASE_URL}/api/services`, payload, headers);
+      setServiceForm({ customer: '', vehicle: '', serviceType: '', status: 'Booked', mechanic: '', estimatedCost: '' });
       fetchDashboardData();
       alert('Service created successfully');
-    } catch (err) { console.error('Error creating service:', err); }
+    } catch (err) { console.error('Error creating service:', err); alert(err.response?.data?.error || 'Error creating service'); }
   };
 
   // ── New Feature Handlers ─────────────────────────────────────
@@ -397,7 +406,7 @@ const AdminDashboard = () => {
                 </select>
                 <input type="text" placeholder="Service Type" value={serviceForm.serviceType} onChange={(e) => setServiceForm({ ...serviceForm, serviceType: e.target.value })} required />
                 <select value={serviceForm.status} onChange={(e) => setServiceForm({ ...serviceForm, status: e.target.value })}>
-                  <option>Pending</option><option>Assigned</option><option>In Progress</option><option>Completed</option>
+                  <option>Booked</option><option>Assigned</option><option>In Progress</option><option>Completed</option><option>Delivered</option>
                 </select>
                 <select value={serviceForm.mechanic} onChange={(e) => setServiceForm({ ...serviceForm, mechanic: e.target.value })}>
                   <option value="">Assign Mechanic</option>
@@ -433,7 +442,7 @@ const AdminDashboard = () => {
                           ))}
                         </select>
                       </td>
-                      <td>৳{s.estimatedCost || 0}</td>
+                      <td>৳{s.cost || 0}</td>
                       <td>{new Date(s.createdAt).toLocaleDateString()}</td>
                       <td>
                         <button onClick={() => handleUpdateService(s._id, { status: 'Completed' })} className="btn-accept" style={{ padding: '5px 10px', fontSize: '12px' }}>Complete</button>

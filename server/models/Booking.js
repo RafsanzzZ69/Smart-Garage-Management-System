@@ -7,6 +7,10 @@ const bookingSchema = new mongoose.Schema({
   preferredDate: { type: Date, required: true },
   mechanic: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   status: { type: String, enum: ['Pending', 'Confirmed', 'Completed', 'Cancelled'], default: 'Pending' },
+  estimatedCost: { type: Number, default: 0 },
+  finalCost: { type: Number, default: 0 },
+  promoCode: { type: String },
+  discount: { type: Number, default: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);

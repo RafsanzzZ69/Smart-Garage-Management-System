@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import './CustomerDashboard.css';
  
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:5000';
  
 const CustomerDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -18,9 +18,17 @@ const CustomerDashboard = () => {
   const [bookingForm, setBookingForm] = useState({ serviceType: '', preferredDate: '', vehicle: '', package: '', estimatedCost: 0, promoCode: '', promoId: '', discount: 0, finalCost: 0 });
   const [promoStatus, setPromoStatus] = useState(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
+  const SERVICE_TYPE_PRICES = {
+    'General Maintenance': 5000,
+    'Parts Replacement': 15000,
+    'Emergency Repair': 30000,
+    'Engine Service': 20000,
+  };
+
+  const getServiceTypeCost = (serviceType) => SERVICE_TYPE_PRICES[serviceType] || 0;
   const [loading, setLoading] = useState(false);
   const [payingBookingId, setPayingBookingId] = useState(null);
-  const [paymentForm, setPaymentForm] = useState({ method: 'card', promoCode: '', promoId: '', discount: 0 });
+  const [paymentForm, setPaymentForm] = useState({ method: 'Card', promoCode: '', promoId: '', discount: 0 });
   const [paymentPromoStatus, setPaymentPromoStatus] = useState(null);
   const [reviewForm, setReviewForm] = useState({ booking: '', mechanic: '', rating: 5, comment: '' });
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -75,7 +83,8 @@ const CustomerDashboard = () => {
   const handlePackageSelect = (e) => {
     const pkgId = e.target.value;
     const selected = packages.find(p => p._id === pkgId);
-    setBookingForm({ ...bookingForm, package: pkgId, estimatedCost: selected ? selected.price : 0, finalCost: selected ? selected.price : 0, promoCode: '', promoId: '', discount: 0 });
+    const baseCost = selected ? selected.price : getServiceTypeCost(bookingForm.serviceType);
+    setBookingForm({ ...bookingForm, package: pkgId, estimatedCost: baseCost, finalCost: baseCost, promoCode: '', promoId: '', discount: 0 });
     setPromoStatus(null);
   };
  
@@ -160,7 +169,7 @@ const CustomerDashboard = () => {
     try {
       await axios.post(`${API_BASE_URL}/api/payments`, {
         booking: booking._id, amount: finalPayable, method: paymentForm.method,
-        promoCode: paymentForm.promoCode || undefined, discount: paymentForm.discount || 0, status: 'Paid'
+        promoCode: paymentForm.promoCode || undefined, discount: paymentForm.discount || 0, status: 'Completed'
       }, headers);
       if (paymentForm.promoId) {
         await axios.patch(`${API_BASE_URL}/api/promotions/${paymentForm.promoId}/use`, {}, headers);
@@ -322,7 +331,19 @@ const CustomerDashboard = () => {
                   <option value="">Select Vehicle</option>
                   {vehicles.map(v => <option key={v._id} value={v._id}>{v.model} ({v.licensePlate})</option>)}
                 </select>
-                <select value={bookingForm.serviceType} onChange={(e) => setBookingForm({...bookingForm, serviceType: e.target.value})} required>
+                <select value={bookingForm.serviceType} onChange={(e) => {
+                    const cost = getServiceTypeCost(e.target.value);
+                    setBookingForm({
+                      ...bookingForm,
+                      serviceType: e.target.value,
+                      package: '',
+                      estimatedCost: cost,
+                      finalCost: cost,
+                      promoCode: '',
+                      promoId: '',
+                      discount: 0
+                    });
+                  }} required>
                   <option value="">Select Service Type</option>
                   <option value="General Maintenance">🔧 General Maintenance — ৳2,000 to ৳10,000</option>
                   <option value="Parts Replacement">🔩 Parts Replacement — ৳3,000 to ৳50,000+</option>
@@ -387,9 +408,9 @@ const CustomerDashboard = () => {
                                   <div>
                                     <label style={styles.payLabel}>Payment Method</label>
                                     <select value={paymentForm.method} onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })} style={styles.paySelect}>
-                                      <option value="card">Credit / Debit Card</option>
-                                      <option value="cash">Cash</option>
-                                      <option value="mobile_banking">Mobile Banking</option>
+                                      <option value="Card">Credit / Debit Card</option>
+                                      <option value="Cash">Cash</option>
+                                      <option value="Online">Mobile Banking</option>
                                     </select>
                                   </div>
                                   <div>

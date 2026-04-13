@@ -59,6 +59,7 @@ const Login = () => {
           <strong>Test Credentials:</strong>
           <p>Admin: admin@sgms.com / admin123</p>
           <p>Customer: customer@test.com / customer123</p>
+          <p>Mechanic: mechanic@test.com / mechanic123</p>
         </div>
       </div>
     </div>

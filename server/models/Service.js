@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const serviceSchema = new mongoose.Schema({
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
   type: { type: String, required: true },
   description: { type: String },
@@ -13,3 +14,4 @@ const serviceSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = mongoose.model('Service', serviceSchema);
+

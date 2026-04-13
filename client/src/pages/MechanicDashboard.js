@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import './MechanicDashboard.css';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:5000';
 
 const MechanicDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -36,7 +36,7 @@ const MechanicDashboard = () => {
 
       // Calculate earnings
       const completedJobs = (jobsRes.data || []).filter(j => j.status === 'Completed');
-      const totalEarnings = completedJobs.length * 500; // $500 per completed job (example)
+      const totalEarnings = completedJobs.reduce((sum, j) => sum + (j.cost || j.estimatedCost || 0), 0);
 
       setEarnings({
         totalEarnings: totalEarnings,
@@ -187,7 +187,7 @@ const MechanicDashboard = () => {
                       </div>
                       <div className="job-detail-row">
                         <span className="job-detail-label">Estimated Cost:</span>
-                        <span className="job-detail-value">${job.estimatedCost || '500'}</span>
+                        <span className="job-detail-value">৳{job.cost || job.estimatedCost || '500'}</span>
                       </div>
                     </div>
 
@@ -266,7 +266,7 @@ const MechanicDashboard = () => {
                       <td>{job.serviceType}</td>
                       <td>{job.vehicle?.model || 'N/A'}</td>
                       <td><span style={{ color: '#51cf66', fontWeight: 'bold' }}>Completed</span></td>
-                      <td>${job.estimatedCost || '500'}</td>
+                      <td>৳{job.cost || job.estimatedCost || '500'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -315,7 +315,7 @@ const MechanicDashboard = () => {
               <ul style={{ listStyle: 'none', padding: 0 }}>
                 <li>✅ Complete 10 jobs - <strong>{earnings.completedJobs}/10</strong></li>
                 <li>✅ Maintain 4.5+ rating - <strong>4.8/5.0</strong></li>
-                <li>✅ Earn $5,000 - <strong>${earnings.totalEarnings}/5000</strong></li>
+                <li>✅ Earn ৳5,000 - <strong>৳{earnings.totalEarnings}/5000</strong></li>
               </ul>
             </div>
           </div>
