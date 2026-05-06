@@ -27,21 +27,21 @@ const MechanicDashboard = () => {
   const fetchMechanicData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch jobs assigned to this mechanic
-      const jobsRes = await axios.get(`${API_BASE_URL}/api/services?mechanic=${user?._id}`, {
+      const bookingsRes = await axios.get(`${API_BASE_URL}/api/bookings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setJobs(jobsRes.data || []);
+      const assignedJobs = (bookingsRes.data || []).filter(job => {
+        return job.mechanic?._id === user?._id || job.mechanic === user?._id;
+      });
+      setJobs(assignedJobs);
 
-      // Calculate earnings
-      const completedJobs = (jobsRes.data || []).filter(j => j.status === 'Completed');
-      const totalEarnings = completedJobs.reduce((sum, j) => sum + (j.cost || j.estimatedCost || 0), 0);
+      const completedJobs = assignedJobs.filter(j => j.status === 'Completed');
+      const totalEarnings = completedJobs.reduce((sum, j) => sum + (j.finalCost || j.estimatedCost || 0), 0);
 
       setEarnings({
-        totalEarnings: totalEarnings,
+        totalEarnings,
         completedJobs: completedJobs.length,
-        pendingJobs: (jobsRes.data || []).filter(j => j.status !== 'Completed').length
+        pendingJobs: assignedJobs.filter(j => j.status !== 'Completed').length
       });
     } catch (error) {
       console.error('Error fetching mechanic data:', error);
@@ -58,8 +58,8 @@ const MechanicDashboard = () => {
   const handleAcceptJob = async (jobId) => {
     try {
       await axios.put(
-        `${API_BASE_URL}/api/services/${jobId}`,
-        { status: 'Assigned' },
+        `${API_BASE_URL}/api/bookings/${jobId}`,
+        { status: 'In Progress' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchMechanicData();
@@ -77,7 +77,7 @@ const MechanicDashboard = () => {
   const handleUpdateStatus = async () => {
     try {
       await axios.put(
-        `${API_BASE_URL}/api/services/${selectedJob._id}`,
+        `${API_BASE_URL}/api/bookings/${selectedJob._id}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -91,7 +91,7 @@ const MechanicDashboard = () => {
   const handleCompleteJob = async (jobId) => {
     try {
       await axios.put(
-        `${API_BASE_URL}/api/services/${jobId}`,
+        `${API_BASE_URL}/api/bookings/${jobId}`,
         { status: 'Completed' },
         { headers: { Authorization: `Bearer ${token}` } }
       );

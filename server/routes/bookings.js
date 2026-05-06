@@ -1,6 +1,7 @@
 const express = require('express');
 const { auth } = require('../middleware/auth');
 const Booking = require('../models/Booking');
+const ServiceHistory = require('../models/Servicehistory');
 
 const router = express.Router();
 
@@ -28,7 +29,28 @@ router.post('/', auth, async (req, res) => {
 // Update booking
 router.put('/:id', auth, async (req, res) => {
   try {
-    const booking = await Booking.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const booking = await Booking.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('customer vehicle mechanic');
+
+    if (!booking) {
+      return res.status(404).send({ error: 'Booking not found' });
+    }
+
+    if (req.body.status === 'Completed') {
+      const existingHistory = await ServiceHistory.findOne({ booking: booking._id });
+      if (!existingHistory) {
+        await ServiceHistory.create({
+          vehicle: booking.vehicle?._id || booking.vehicle,
+          customer: booking.customer?._id || booking.customer,
+          mechanic: booking.mechanic?._id || booking.mechanic,
+          booking: booking._id,
+          serviceDate: new Date(),
+          servicesPerformed: [booking.serviceType],
+          totalCost: booking.finalCost || booking.estimatedCost || 0,
+          nextServiceDue: new Date(new Date().setDate(new Date().getDate() + 90))
+        });
+      }
+    }
+
     res.send(booking);
   } catch (err) {
     res.status(400).send({ error: err.message });

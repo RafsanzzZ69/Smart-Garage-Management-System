@@ -33,6 +33,8 @@ const CustomerDashboard = () => {
   const [reviewForm, setReviewForm] = useState({ booking: '', mechanic: '', rating: 5, comment: '' });
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [maintenanceRecommendation, setMaintenanceRecommendation] = useState('Book a service to receive a maintenance reminder soon.');
  
   const token = localStorage.getItem('token');
   const headers = { headers: { Authorization: `Bearer ${token}` } };
@@ -59,6 +61,19 @@ const CustomerDashboard = () => {
       const allBookings = bookingsRes.data || [];
       const myBookings = allBookings.filter(b => b.customer && (b.customer._id === user?._id || b.customer === user?._id));
       setBookings(myBookings);
+      const completedBookings = myBookings.filter(b => b.status === 'Completed');
+      if (completedBookings.length) {
+        const latest = completedBookings.reduce((latestBooking, booking) => {
+          const bookingDate = new Date(booking.preferredDate || booking.createdAt);
+          return bookingDate > new Date(latestBooking.preferredDate || latestBooking.createdAt) ? booking : latestBooking;
+        }, completedBookings[0]);
+        const nextServiceDate = new Date(latest.preferredDate || latest.createdAt);
+        nextServiceDate.setDate(nextServiceDate.getDate() + 90);
+        setMaintenanceRecommendation(`Next recommended service date: ${nextServiceDate.toLocaleDateString()}`);
+      } else {
+        setMaintenanceRecommendation('Book a service to receive a maintenance reminder soon.');
+      }
+      await fetchNotifications();
     } catch (error) {
       console.error('Error fetching customer data:', error);
     } finally {
@@ -78,6 +93,16 @@ const CustomerDashboard = () => {
       const res = await axios.get(`${API_BASE_URL}/api/reviews/customer/${user?._id}`, headers);
       setReviews(res.data);
     } catch (err) { console.error('Error fetching reviews:', err); }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/notifications`, headers);
+      setNotifications(res.data);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+      setNotifications([]);
+    }
   };
  
   const handlePackageSelect = (e) => {
@@ -275,6 +300,26 @@ const CustomerDashboard = () => {
                 <div className="service-card"><span className="service-icon">🛠️</span><h4>Emergency Repair</h4><p>Quick emergency repair services</p></div>
               </div>
             </div>
+            <div className="recommendation-section">
+              <h3>🔔 Maintenance Reminder</h3>
+              <p>{maintenanceRecommendation}</p>
+            </div>
+            <div className="notifications-section">
+              <h3>📣 Notifications</h3>
+              {notifications.length > 0 ? (
+                <ul className="notification-list">
+                  {notifications.map(note => (
+                    <li key={note._id} className={note.read ? 'notification-read' : 'notification-unread'}>
+                      <strong>{note.title}</strong>
+                      <p>{note.message}</p>
+                      <small>{new Date(note.createdAt).toLocaleString()}</small>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No notifications yet. We'll keep you updated on booking status and service reminders.</p>
+              )}
+            </div>
           </div>
         )}
  
@@ -394,8 +439,20 @@ const CustomerDashboard = () => {
                             )}
                           </td>
                           <td>
-                            {booking.status !== 'Completed' && (
+                            {booking.status !== 'Completed' ? (
                               <button onClick={() => handleCancelBooking(booking._id)} style={{ background: '#ff6b6b', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px' }}>Cancel</button>
+                            ) : (
+                              !reviewedBookingIds.includes(booking._id) && (
+                                <button onClick={() => {
+                                  setActiveTab('reviews');
+                                  setReviewForm({
+                                    booking: booking._id,
+                                    mechanic: booking.mechanic?._id || booking.mechanic,
+                                    rating: 5,
+                                    comment: ''
+                                  });
+                                }} style={{ background: '#ffc107', color: 'black', border: 'none', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px' }}>Review</button>
+                              )
                             )}
                           </td>
                         </tr>

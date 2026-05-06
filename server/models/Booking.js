@@ -6,7 +6,7 @@ const bookingSchema = new mongoose.Schema({
   serviceType: { type: String, required: true },
   preferredDate: { type: Date, required: true },
   mechanic: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  status: { type: String, enum: ['Pending', 'Confirmed', 'Completed', 'Cancelled'], default: 'Pending' },
+  status: { type: String, enum: ['Pending', 'Assigned', 'In Progress', 'Completed', 'Cancelled'], default: 'Pending' },
   estimatedCost: { type: Number, default: 0 },
   finalCost: { type: Number, default: 0 },
   promoCode: { type: String },

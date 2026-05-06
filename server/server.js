@@ -21,6 +21,11 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/invoices', require('./routes/invoices'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/financials', require('./routes/financials'));
+app.use('/api/packages', require('./routes/packages'));
+app.use('/api/promotions', require('./routes/promotions'));
+app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/service-history', require('./routes/serviceHistory'));
+app.use('/api/attendance', require('./routes/attendance'));
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

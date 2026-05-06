@@ -1,9 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 
+const GARAGE_COORDS = { lat: 23.7806, lng: 90.2793 };
+
 const Home = () => {
   const navigate = useNavigate();
+  const [distanceText, setDistanceText] = useState('Allow location access to estimate distance');
+
+  useEffect(() => {
+    if (!navigator.geolocation) return setDistanceText('Geolocation not supported');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const toRad = (value) => (value * Math.PI) / 180;
+        const R = 6371;
+        const dLat = toRad(GARAGE_COORDS.lat - latitude);
+        const dLng = toRad(GARAGE_COORDS.lng - longitude);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(toRad(latitude)) * Math.cos(toRad(GARAGE_COORDS.lat)) *
+          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = (R * c).toFixed(1);
+        setDistanceText(`${distance} km from your current location`);
+      },
+      () => setDistanceText('Location permission denied'),
+      { timeout: 10000 }
+    );
+  }, []);
 
   return (
     <div className="home-page">
@@ -78,6 +103,16 @@ const Home = () => {
               <p>All services come with a satisfaction guarantee and warranty</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Location Section */}
+      <section className="location-section">
+        <div className="location-card">
+          <h3>📍 Garage Location</h3>
+          <p><strong>Smart Garage</strong></p>
+          <p>190/1 Baridhara Road 4 Block F Dhaka.</p>
+          <p>{distanceText}</p>
         </div>
       </section>
 

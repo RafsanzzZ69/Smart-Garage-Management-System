@@ -17,6 +17,7 @@ const AdminDashboard = () => {
   const [newMechanic, setNewMechanic] = useState({ name: '', email: '', password: 'mechanic123', role: 'Mechanic', specialization: '', salary: '', phone: '' });
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [newInventory, setNewInventory] = useState({ name: '', quantity: '', supplier: '', purchasePrice: '' });
@@ -62,11 +63,12 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [financialsRes, expensesRes, usersRes, serviceRes, inventoryRes, vehiclesRes] = await Promise.all([
+      const [financialsRes, expensesRes, usersRes, serviceRes, bookingRes, inventoryRes, vehiclesRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/financials`, headers),
         axios.get(`${API_BASE_URL}/api/expenses`, headers),
         axios.get(`${API_BASE_URL}/api/users`, headers),
         axios.get(`${API_BASE_URL}/api/services`, headers),
+        axios.get(`${API_BASE_URL}/api/bookings`, headers),
         axios.get(`${API_BASE_URL}/api/inventory`, headers),
         axios.get(`${API_BASE_URL}/api/vehicles`, headers),
       ]);
@@ -74,6 +76,7 @@ const AdminDashboard = () => {
       setExpenses(expensesRes.data);
       setUsers(usersRes.data);
       setServices(serviceRes.data);
+      setBookings(bookingRes.data);
       setInventory(inventoryRes.data);
       setVehicles(vehiclesRes.data);
     } catch (err) {
@@ -157,6 +160,13 @@ const AdminDashboard = () => {
     } catch (err) { console.error('Error updating service:', err); }
   };
 
+  const handleUpdateBooking = async (id, updates) => {
+    try {
+      await axios.put(`${API_BASE_URL}/api/bookings/${id}`, updates, headers);
+      fetchDashboardData();
+    } catch (err) { console.error('Error updating booking:', err); }
+  };
+
   const handleCreateService = async (e) => {
     e.preventDefault();
     try {
@@ -174,6 +184,33 @@ const AdminDashboard = () => {
       fetchDashboardData();
       alert('Service created successfully');
     } catch (err) { console.error('Error creating service:', err); alert(err.response?.data?.error || 'Error creating service'); }
+  };
+
+  const getStatusButtonStyle = (status) => {
+    const baseStyle = {
+      padding: '5px 10px',
+      fontSize: '12px',
+      border: 'none',
+      borderRadius: '5px',
+      color: '#fff',
+      cursor: ['Completed', 'Cancelled'].includes(status) ? 'default' : 'pointer',
+      opacity: ['Completed', 'Cancelled'].includes(status) ? 0.7 : 1
+    };
+    switch (status) {
+      case 'Pending': return { ...baseStyle, background: '#f0ad4e' };
+      case 'Confirmed': return { ...baseStyle, background: '#0d6efd' };
+      case 'Assigned': return { ...baseStyle, background: '#6f42c1' };
+      case 'In Progress': return { ...baseStyle, background: '#20c997' };
+      case 'Completed': return { ...baseStyle, background: '#198754' };
+      case 'Cancelled': return { ...baseStyle, background: '#dc3545' };
+      default: return { ...baseStyle, background: '#6c757d' };
+    }
+  };
+
+  const getStatusButtonLabel = (status) => {
+    if (status === 'Completed') return 'Completed';
+    if (status === 'Cancelled') return 'Cancelled';
+    return 'Complete';
   };
 
   // ── New Feature Handlers ─────────────────────────────────────
@@ -390,6 +427,49 @@ const AdminDashboard = () => {
           <div className="services-section">
             <h2>🔧 Service Management</h2>
             <div className="inventory-form-container" style={{ marginBottom: '30px' }}>
+              <h3>Customer Bookings</h3>
+              {bookings.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr><th>Customer</th><th>Vehicle</th><th>Service Type</th><th>Status</th><th>Mechanic</th><th>Cost</th><th>Date</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    {bookings.map(b => (
+                      <tr key={b._id}>
+                        <td>{b.customer?.name || 'N/A'}</td>
+                        <td>{b.vehicle?.model || 'N/A'}</td>
+                        <td>{b.serviceType}</td>
+                        <td>
+                          <select value={b.status} onChange={(e) => handleUpdateBooking(b._id, { status: e.target.value })}>
+                            <option>Pending</option><option>Confirmed</option><option>Assigned</option><option>In Progress</option><option>Completed</option><option>Cancelled</option>
+                          </select>
+                        </td>
+                        <td>
+                          <select value={b.mechanic?._id || ''} onChange={(e) => handleUpdateBooking(b._id, { mechanic: e.target.value })}>
+                            <option value="">Unassigned</option>
+                            {users.filter(u => u.role === 'Mechanic').map(m => (
+                              <option key={m._id} value={m._id}>{m.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>৳{b.finalCost || b.estimatedCost || 0}</td>
+                        <td>{new Date(b.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <button
+                            onClick={() => handleUpdateBooking(b._id, { status: 'Completed' })}
+                            style={getStatusButtonStyle(b.status)}
+                            disabled={['Completed', 'Cancelled'].includes(b.status)}
+                          >
+                            {getStatusButtonLabel(b.status)}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : <p>No customer bookings available.</p>}
+            </div>
+            <div className="inventory-form-container" style={{ marginBottom: '30px' }}>
               <h3>Create New Service</h3>
               <form onSubmit={handleCreateService} className="service-form">
                 <select value={serviceForm.customer} onChange={(e) => setServiceForm({ ...serviceForm, customer: e.target.value })} required>
@@ -418,40 +498,6 @@ const AdminDashboard = () => {
                 <button type="submit">Create Service</button>
               </form>
             </div>
-            {services.length > 0 ? (
-              <table>
-                <thead>
-                  <tr><th>Customer</th><th>Vehicle</th><th>Service Type</th><th>Status</th><th>Mechanic</th><th>Cost</th><th>Date</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {services.map(s => (
-                    <tr key={s._id}>
-                      <td>{s.customer?.name || 'N/A'}</td>
-                      <td>{s.vehicle?.model || 'N/A'}</td>
-                      <td>{s.serviceType}</td>
-                      <td>
-                        <select value={s.status} onChange={(e) => handleUpdateService(s._id, { status: e.target.value })}>
-                          <option>Pending</option><option>Assigned</option><option>In Progress</option><option>Completed</option>
-                        </select>
-                      </td>
-                      <td>
-                        <select value={s.mechanic?._id || ''} onChange={(e) => handleUpdateService(s._id, { mechanic: e.target.value })}>
-                          <option value="">Unassigned</option>
-                          {users.filter(u => u.role === 'Mechanic').map(m => (
-                            <option key={m._id} value={m._id}>{m.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>৳{s.cost || 0}</td>
-                      <td>{new Date(s.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <button onClick={() => handleUpdateService(s._id, { status: 'Completed' })} className="btn-accept" style={{ padding: '5px 10px', fontSize: '12px' }}>Complete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : <p>No service records available.</p>}
           </div>
         )}
 
@@ -705,7 +751,33 @@ const AdminDashboard = () => {
                   ))}
                 </tbody>
               </table>
-            ) : <p>No service history records found.</p>}
+            ) : (
+              bookings.filter(b => b.status === 'Completed').length > 0 ? (
+                <div>
+                  <p style={{ color: '#6c757d', marginBottom: '10px' }}>
+                    No dedicated service history records found yet. Showing completed bookings as recent service history.
+                  </p>
+                  <table>
+                    <thead>
+                      <tr><th>Vehicle</th><th>Customer</th><th>Services</th><th>Mechanic</th><th>Date</th><th>Cost</th><th>Next Service</th></tr>
+                    </thead>
+                    <tbody>
+                      {bookings.filter(b => b.status === 'Completed').map(b => (
+                        <tr key={b._id}>
+                          <td>{b.vehicle?.model || 'N/A'}</td>
+                          <td>{b.customer?.name || 'N/A'}</td>
+                          <td>{b.serviceType || 'Service Completed'}</td>
+                          <td>{b.mechanic?.name || '-'}</td>
+                          <td>{new Date(b.updatedAt || b.completedAt || b.preferredDate || b.createdAt).toLocaleDateString()}</td>
+                          <td>৳{b.finalCost || b.estimatedCost || 0}</td>
+                          <td>{new Date(new Date().setDate(new Date().getDate() + 90)).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : <p>No service history records found.</p>
+            )}
           </div>
         )}
 
